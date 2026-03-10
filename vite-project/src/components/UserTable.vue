@@ -76,7 +76,10 @@
         </div>
       </div>
     </div>
+    <div class="table-wrapper">
+    
     <DataTable
+      ref="dt"
       :value="users"
       :paginator="true"
       :rows="rowsPerPage"
@@ -88,6 +91,7 @@
       @sort="onSort"
       scrollable
       scrollHeight="600px"
+      :virtualScrollerOptions="{ itemSize: 40 }"
     >
       <Column field="id" header="ID" style="width: 100px" sortable />
       <Column field="name" header="Name" sortable />
@@ -97,22 +101,85 @@
       <Column field="birthdate" header="Birthdate" sortable />
       <Column header="Action">
         <template #body="slotProps">
-          <button
-            class="px-2 py-1 border rounded mr-2"
+        <div class="flex gap-2">
+        
+          <Button
+          label="Edit"
+            class="px-2 py-1 border rounded "
             @click="onEdit(slotProps.data)"
           >
-            Edit
-          </button>
+            
+          </Button>
 
-          <button
+          <Button
+          label="Delete"
             class="px-2 py-1 border rounded"
             @click="onDelete(slotProps.data)"
           >
-            Delete
-          </button>
+            
+          </Button>
+          <Button
+          label="Sticky"
+         @click="setSticky(slotProps.data)"
+            class="px-2 py-1 border rounded"
+          >   
+
+
+          </Button>
+          </div>
         </template>
       </Column>
     </DataTable>
+
+  <div v-if="showstickyRow" class="sticky-overlay">
+     <DataTable
+      ref="dt"
+      class="w-full"
+      :value="stickyRow"
+      :lazy="true"
+      :loading="loading"
+      :first="first"
+    >
+      <Column field="id" header="ID" style="width: 100px" sortable />
+      <Column field="name" header="Name" sortable />
+      <Column field="position" header="Position" sortable />
+      <Column field="location" header="Location" sortable />
+      <Column field="age" header="Age" sortable />
+      <Column field="birthdate" header="Birthdate" sortable />
+      <Column header="Action">
+        <template #body="slotProps">
+        <div class="flex gap-2">
+        
+          <Button
+          label="Edit"
+            class="px-2 py-1 border rounded "
+            @click="onEdit(slotProps.data)"
+          >
+            
+          </Button>
+
+          <Button
+          label="Delete"
+            class="px-2 py-1 border rounded"
+            @click="onDelete(slotProps.data)"
+          >
+            
+          </Button>
+          <Button
+          label="Close"
+         @click="showstickyRow = false"
+            class="px-2 py-1 border rounded"
+          >   
+
+
+          </Button>
+          </div>
+        </template>
+      </Column>
+    </DataTable>
+
+  </div>
+  </div>
     <Dialog
       v-model:visible="editDialog"
       header="Edit User"
@@ -163,7 +230,7 @@ import * as api from "../apis/Userapi";
 import dayjs from "dayjs";
 import { useConfirm } from "primevue/useconfirm";
 const confirm = useConfirm();
-
+const dt = ref();
 const editDialog = ref(false);
 const editingUser = ref<User>({
   id: 0,
@@ -206,7 +273,12 @@ async function loadPage(page: number, rows: number) {
   totalRecords.value = 10000000; // 模擬 1000萬筆總數
   loading.value = false;
 }
-
+const showstickyRow = ref(false);
+const stickyRow = ref([] as User[]);
+function setSticky(data: User) {
+    showstickyRow.value = true;
+    stickyRow.value = [data];
+}
 // 當換頁
 async function onPage(event: any) {
   currentPage.value = event.page;
@@ -270,3 +342,26 @@ onMounted(() => {
   loadPage(0, rowsPerPage);
 });
 </script>
+<style scoped>
+.table-wrapper {
+  position: relative;
+}
+
+.sticky-overlay {
+  position: absolute;
+  top: 120px;   /* header + 2 rows */
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  background: #fff9c4;
+  border-bottom: 1px solid #ddd;
+  z-index: 50;
+}
+.sticky-overlay :deep(.p-datatable-header),
+.sticky-overlay :deep(.p-datatable-thead),
+.sticky-overlay :deep(.p-datatable-scrollable-header) {
+visibility: collapse;
+}
+</style>
